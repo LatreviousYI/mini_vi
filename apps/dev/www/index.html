@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>拍照上传</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* 隐藏原生input */
+        .camera-input {
+            display: none;
+        }
+
+        /* 拍照按钮 */
+        .camera-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .camera-btn:active {
+            transform: scale(0.98);
+        }
+
+        .camera-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .camera-btn.front {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .camera-btn.back {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        /* 提示文字 */
+        .tip {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        /* 上传预览区域（小） */
+        .upload-preview {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .upload-preview.show {
+            display: block;
+        }
+
+        .upload-preview-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .upload-preview-area {
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px solid #e9ecef;
+        }
+
+        .upload-preview-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 服务器返回图片区域（大） */
+        .server-image-section {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .server-image-section.show {
+            display: block;
+        }
+
+        .server-image-title {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+        }
+
+        .server-image-container {
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8f9fa;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 3px solid #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .server-image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 36px;
+            height: 36px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .success-msg {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .success-msg.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .error-msg {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .error-msg.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .url-display {
+            margin-top: 15px;
+            padding: 12px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            word-break: break-all;
+            font-size: 12px;
+            color: #1565c0;
+            display: none;
+        }
+
+        .url-display.show {
+            display: block;
+        }
+
+        .url-display strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #0d47a1;
+            font-size: 13px;
+        }
+
+        .url-text {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            color: #495057;
+            font-family: monospace;
+        }
+
+        .copy-btn {
+            width: 100%;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:active {
+            background: #218838;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:active {
+            background: #5a6268;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:active {
+            background: #0056b3;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:active {
+            background: #c82333;
+        }
+
+        .image-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+            display: none;
+        }
+
+        .image-info.show {
+            display: block;
+        }
+
+        .image-info div {
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .image-info div:last-child {
+            margin-bottom: 0;
+        }
+
+        .image-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>📷 拍照上传</h1>
+            <p>选择相机拍照或从相册选择</p>
+        </div>
+
+        <!-- ✅ 方案1: 去掉capture，让用户在相机应用中选择前后摄像头 -->
+        <input type="file" class="camera-input" id="camera-input" accept="image/*">
+        <button class="camera-btn" id="camera-btn">
+            <span>📸</span>
+            <span>拍照或选择图片</span>
+        </button>
+
+        <div class="tip">
+            💡 提示: 打开相机后可以切换前置/后置摄像头
+        </div>
+
+        <div class="upload-preview" id="upload-preview">
+            <div class="upload-preview-title">📤 上传的图片</div>
+            <div class="upload-preview-area">
+                <img id="upload-preview-image" alt="上传预览">
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">正在上传中...</div>
+        </div>
+
+        <div class="success-msg" id="success-msg">✅ 图片上传成功！</div>
+        <div class="error-msg" id="error-msg">❌ 上传失败，请重试</div>
+
+        <div class="server-image-section" id="server-image-section">
+            <div class="server-image-title">🌐 服务器返回图片</div>
+            <div class="server-image-container">
+                <img id="server-image" alt="服务器图片">
+                <button class="delete-btn" id="delete-btn">×</button>
+            </div>
+        </div>
+
+        <div class="image-info" id="image-info">
+            <div><span>文件名:</span><strong id="file-name">-</strong></div>
+            <div><span>文件大小:</span><strong id="file-size">-</strong></div>
+            <div><span>上传时间:</span><strong id="upload-time">-</strong></div>
+        </div>
+
+        <div class="url-display" id="url-display">
+            <strong>📎 图片链接</strong>
+            <div class="url-text" id="image-url">-</div>
+            <button class="copy-btn" id="copy-btn">📋 复制URL</button>
+        </div>
+
+        <div class="action-buttons" id="action-buttons" style="display: none;">
+            <button class="btn btn-secondary" id="retake-btn">🔄 重新拍照</button>
+            <button class="btn btn-primary" id="download-btn">💾 保存图片</button>
+            <button class="btn btn-danger" id="clear-btn">🗑️ 清除</button>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        const API_PATH = '/upload/images';
+        const UPLOAD_URL = `${BASE_URL}${API_PATH}`;
+
+        const cameraInput = document.getElementById('camera-input');
+        const cameraBtn = document.getElementById('camera-btn');
+        const uploadPreview = document.getElementById('upload-preview');
+        const uploadPreviewImage = document.getElementById('upload-preview-image');
+        const serverImageSection = document.getElementById('server-image-section');
+        const serverImage = document.getElementById('server-image');
+        const deleteBtn = document.getElementById('delete-btn');
+        const loading = document.getElementById('loading');
+        const successMsg = document.getElementById('success-msg');
+        const errorMsg = document.getElementById('error-msg');
+        const imageInfo = document.getElementById('image-info');
+        const urlDisplay = document.getElementById('url-display');
+        const actionButtons = document.getElementById('action-buttons');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const uploadTime = document.getElementById('upload-time');
+        const imageUrl = document.getElementById('image-url');
+        const copyBtn = document.getElementById('copy-btn');
+        const retakeBtn = document.getElementById('retake-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const clearBtn = document.getElementById('clear-btn');
+
+        let currentImageUrl = '';
+
+        cameraBtn.addEventListener('click', () => {
+            cameraInput.click();
+        });
+
+        cameraInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadPreviewImage.src = e.target.result;
+                uploadPreview.classList.add('show');
+            };
+            reader.readAsDataURL(file);
+
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            imageInfo.classList.add('show');
+
+            await uploadImage(file);
+        });
+
+        async function uploadImage(file) {
+            loading.classList.add('show');
+            cameraBtn.disabled = true;
+            successMsg.classList.remove('show');
+            errorMsg.classList.remove('show');
+            serverImageSection.classList.remove('show');
+            urlDisplay.classList.remove('show');
+            actionButtons.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(UPLOAD_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP错误! 状态码: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    currentImageUrl = result.data;
+                    
+                    loading.classList.remove('show');
+                    successMsg.classList.add('show');
+                    setTimeout(() => successMsg.classList.remove('show'), 3000);
+                    
+                    serverImage.src = currentImageUrl;
+                    serverImage.onload = () => {
+                        serverImageSection.classList.add('show');
+                    };
+                    serverImage.onerror = () => {
+                        errorMsg.textContent = '❌ 服务器图片加载失败';
+                        errorMsg.classList.add('show');
+                    };
+                    
+                    imageUrl.textContent = currentImageUrl;
+                    urlDisplay.classList.add('show');
+                    uploadTime.textContent = new Date().toLocaleString('zh-CN');
+                    actionButtons.style.display = 'flex';
+                } else {
+                    throw new Error(result.message || '上传失败');
+                }
+            } catch (error) {
+                loading.classList.remove('show');
+                errorMsg.classList.add('show');
+                errorMsg.textContent = `❌ 上传失败: ${error.message}`;
+                setTimeout(() => errorMsg.classList.remove('show'), 5000);
+            } finally {
+                cameraBtn.disabled = false;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(currentImageUrl);
+                copyBtn.textContent = '✅ 已复制';
+                setTimeout(() => copyBtn.textContent = '📋 复制URL', 2000);
+            } catch (error) {
+                const textArea = document.createElement('textarea');
+                textArea.value = currentImageUrl;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                copyBtn.textContent = '✅ 已复制';
+                setTimeout(() => copyBtn.textContent = '📋 复制URL', 2000);
+            }
+        });
+
+        function clearAll() {
+            uploadPreviewImage.src = '';
+            uploadPreview.classList.remove('show');
+            serverImage.src = '';
+            serverImageSection.classList.remove('show');
+            imageInfo.classList.remove('show');
+            urlDisplay.classList.remove('show');
+            actionButtons.style.display = 'none';
+            cameraInput.value = '';
+            currentImageUrl = '';
+        }
+
+        deleteBtn.addEventListener('click', clearAll);
+        clearBtn.addEventListener('click', clearAll);
+        retakeBtn.addEventListener('click', () => {
+            clearAll();
+            cameraBtn.click();
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (!currentImageUrl) return;
+            const a = document.createElement('a');
+            a.href = currentImageUrl;
+            a.download = fileName.textContent || 'image.jpg';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (event) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+
+</body>
+</html>
