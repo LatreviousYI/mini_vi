@@ -26,10 +26,12 @@ func init() {
 func start() {
 	go func() {
 		// 服务连接
-		conifg := utils.ConfigValue
 		factory.Init()
+		config := utils.ConfigValue
 		log.Println("server start")
-		if err := factory.FiberApp.Listen(fmt.Sprintf(":%d", conifg.Port)); err != nil && err != http.ErrServerClosed {
+		log.Println("server port:")
+		log.Println(config.Port)
+		if err := factory.FiberApp.Listen(fmt.Sprintf(":%d", config.Port)); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()

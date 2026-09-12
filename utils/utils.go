@@ -73,12 +73,12 @@ func GetExcutePath() string {
 func GetConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
-	viper.AddConfigPath("./config") // 设置当前路径
-	viper.AutomaticEnv()            // 让 Viper 读取环境变量
+	viper.AddConfigPath("./config") // 使用可执行文件所在目录
+	viper.AutomaticEnv()                                          // 让 Viper 读取环境变量
 	// 读取配置文件，忽略错误（如文件不存在）
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Println("配置参数读取错误")
+		log.Println("配置参数读取错误:", err)
 	}
 	viper.Unmarshal(&ConfigValue)
 }

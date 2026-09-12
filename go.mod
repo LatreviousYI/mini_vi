@@ -10,7 +10,6 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.21.0
-	golang.org/x/tools v0.49.0
 	resty.dev/v3 v3.0.0-beta.6
 )
 

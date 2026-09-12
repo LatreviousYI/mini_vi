@@ -1,7 +1,7 @@
 /*
  * @Author       : lvyitao 
  * @Date         : 2024-06-05 11:25:20
- * @LastEditTime: 2026-09-10 14:37:23
+ * @LastEditTime: 2026-09-12 09:50:40
  */
 package v1
 
@@ -17,6 +17,12 @@ import (
 	"github.com/gofiber/fiber/v3"
 	uuid "github.com/satori/go.uuid"
 )
+
+
+func Ts(c fiber.Ctx) error {
+	return utils.SuccessResp(c, "ok")
+}
+
 
 func UploadImageWithOperate(c fiber.Ctx) error {
 	file, err := c.FormFile("file")
